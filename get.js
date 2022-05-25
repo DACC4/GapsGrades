@@ -40,7 +40,6 @@ var looksSame = require('looks-same');
   console.log("Click on connect HES-SO button")
   await page.click('#login-button');
 
-
   // Gaps grades
   console.log("Load grades page...")
   await page.waitForSelector('td[class="titreBox"]', {
@@ -54,19 +53,38 @@ var looksSame = require('looks-same');
   });
   console.log("Grades loaded !")
 
-  console.log("Save HTML to image")
 
-  grades = await page.$('table[class="displayArray"]');
-  try {
-    await grades.screenshot({
-       path: './notes.png'
-      });
-  } catch (e) {
-    console.log("error :" + e)
-  }
+  array = {};
 
-  console.log("Saved !")
+  console.log("Getting grades")
 
+  const data = await page.$$eval('table[class="displayArray"] tr td', tds => tds.map((td) => {
+    return td.innerText;
+  }));
+
+  const headerRegex = /([A-Z\d]+) - moyenne hors examen : (\d.\d)$/g;
+  lastHeader = "";
+  data.forEach(d => {
+    //Is Header
+    if(headerRegex.test(d)){
+      const found = [...d.matchAll(headerRegex)]
+      console.log(found)
+      title = found[0][1]
+      average = found[0][2]
+      array[title] = {}
+      array[title]['average'] = average
+      lastHeader = title
+    }
+
+
+  })
+
+  console.log(array);
+  console.log(data);
+
+  console.log("Grades ok")
+
+  /*
   // Compare image
   if (fs.existsSync('./old.png')) {
     console.log("Compare with last time...")
@@ -102,6 +120,7 @@ var looksSame = require('looks-same');
   fs.rename('./notes.png', './old.png', () => {
     console.log("Save current for next time!");
   });
+  */
 
   browser.close()
   process.exit(0)
